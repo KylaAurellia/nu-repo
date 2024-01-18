@@ -1,13 +1,52 @@
-meme_dict = {
-            "CRINGE": "Sesuatu yang sangat aneh atau memalukan",
-            "LOL": "Tanggapan umum terhadap sesuatu yang lucu",
-            }
-word = input("Ketik kata yang tidak Kamu mengerti (gunakan huruf kapital semua!): ")
-i = 0
-while i < 5:
-    if word in meme_dict.keys():
-        print(meme_dict[word])
-    else:
-        print("kata tidak ditemukan")
-    word = input("Ketik kata yang tidak Kamu mengerti (gunakan huruf kapital semua!): ")
-    i = i + 1
+# This example requires the 'message_content' privileged intent to function.
+
+import discord
+import random
+import asyncio
+from bot_logic import flip_coin, gen_emodji, gen_pass
+
+
+class MyClient(discord.Client):
+    async def on_ready(self):
+        print(f'Logged in as {self.user} (ID: {self.user.id})')
+        print('------')
+
+    async def on_message(self, message):
+        # we do not want the bot to reply to itself
+        if message.author.id == self.user.id:
+            return
+
+        if message.content.startswith('$guess'):
+            await message.channel.send('Guess a number between 1 and 5.')
+
+            def is_correct(m):
+                return m.author == message.author and m.content.isdigit()
+
+            answer = random.randint(1, 5)
+
+            try:
+                guess = await self.wait_for('message', check=is_correct, timeout=5.0)
+            except asyncio.TimeoutError:
+                return await message.channel.send(f'Sorry, you took too long it was {answer}.')
+
+            if int(guess.content) == answer:
+                await message.channel.send('You are right!')
+            else:
+                await message.channel.send(f'Oops. It is actually {answer}.')
+        elif message.content.startswith('$bye'):
+            await message.channel.send('\U0001F590')
+        elif message.content.startswith('$generate password'):
+            await message.channel.send(gen_pass(10))
+        elif message.content.startswith('$coin'):
+            await message.channel.send(flip_coin())
+        elif message.content.startswith('$emodji'):
+            await message.channel.send(gen_emodji())
+        else:
+            await message.channel.send("Tidak dapat memproses perintah ini, maaf")
+
+
+intents = discord.Intents.default()
+intents.message_content = True
+
+client = MyClient(intents=intents)
+client.run('TOKEN DI SINI')
